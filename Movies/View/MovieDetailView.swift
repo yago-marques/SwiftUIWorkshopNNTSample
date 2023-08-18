@@ -12,8 +12,26 @@ struct MovieDetailView: View {
 
     @State var bannerImage = Data()
     @State var posterPath = Data()
+    @State var networkingError = false
 
     var body: some View {
+        if networkingError {
+            NetworkingErrorView()
+        } else {
+            viewWithInternetActive
+            .navigationBarTitleDisplayMode(.inline)
+            .task {
+                do {
+                    bannerImage = try await Movie.getImageData(movie.backdropPath)
+                    posterPath = try await Movie.getImageData(movie.posterPath)
+                } catch {
+                    networkingError = true
+                }
+            }
+        }
+    }
+    
+    private var viewWithInternetActive: some View {
         ScrollView {
             Image(uiImage: .init(data: posterPath) ?? UIImage(named: "elements")!)
                 .resizable()
@@ -46,15 +64,6 @@ struct MovieDetailView: View {
             .padding(15)
 
             Spacer()
-        }
-        .navigationBarTitleDisplayMode(.inline)
-        .task {
-            do {
-                bannerImage = try await Movie.getImageData(movie.backdropPath)
-                posterPath = try await Movie.getImageData(movie.posterPath)
-            } catch {
-                print(error)
-            }
         }
     }
 }
